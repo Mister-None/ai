@@ -5,7 +5,7 @@ import os
 import base64
 from dotenv import load_dotenv
 init(autoreset=True)
-load_dotenv()
+load_dotenv(dotenv_path=os.getenv('DOTENV_FILE_PATH'))
 client = genai.Client(api_key=os.environ.get("ai_key"))
 model = "gemini-flash-lite-latest"
 tools = [types.Tool(googleSearch=types.GoogleSearch()),]
