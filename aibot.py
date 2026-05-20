@@ -1,31 +1,50 @@
 from google import genai
-from google.genai import types
-from colorama import Fore, Style, init
-import os
-import base64
+from google.genai import types 
+import sqlite3, os, sys
 from dotenv import load_dotenv
-init(autoreset=True)
+
 load_dotenv(dotenv_path=os.getenv('DOTENV_FILE_PATH'))
-client = genai.Client(api_key=os.environ.get("ai_key"))
-model = "gemini-flash-lite-latest"
-tools = [types.Tool(googleSearch=types.GoogleSearch()),]
-generate_content_config = types.GenerateContentConfig(tools=tools, temperature=0.5)#, system_instruction="You are a crypto trader, who prefer stable income, also you know python and prefer do things concise")
-chat_history = []
-while True:
-    query = input(Fore.CYAN+'>>> ')
-    if query == 'quit': break
-    chat_history.append(types.Content(role="user", parts=[types.Part.from_text(text=query)]))
-    try:
-        full_response = ""
-        print(Fore.GREEN + Style.BRIGHT, end="")
-        for chunk in client.models.generate_content_stream(model=model, contents=chat_history, config=generate_content_config,):
-            if chunk.text:
-                print(chunk.text, end="")
-                full_response += chunk.text
-        chat_history.append(types.Content(role="model", parts=[types.Part.from_text(text=full_response)]))
-    except genai.errors.ClientError as e:
-        print(Fore.RED + str(e))
-        for model in client.models.list():
-           # if 'gemini' in model.name:
-            print(Fore.YELLOW + model.name)
-        exit()
+client = genai.Client(api_key=os.environ.get("ai_key_private"))
+TG_USER_ID = int(os.getenv('tg_user_id'))
+
+model = "gemini-3.1-flash-lite"
+role = "stoic-introvert(sigma-type), who prefer solitary life and freedom, but also you an expert of social interactions"
+#tools = [types.Tool(googleSearch=types.GoogleSearch())]
+
+config = types.GenerateContentConfig(
+       # tools=tools, 
+        temperature=1, 
+        system_instruction=role)
+
+AI_DATA = os.getenv('ai_data')
+con = sqlite3.connect(AI_DATA)
+cur = con.cursor()
+
+past_history = [(types.Content(role='user', parts=[types.Part.from_text(text=i[0])]), types.Content(role='model', parts=[types.Part.from_text(text=i[1])])) for i in cur.execute("SELECT prompt, answer FROM history")]
+
+history = []
+for i, j in past_history:
+    history.append(i)
+    history.append(j)
+
+chat = client.chats.create(model=model, history=history, config=config)
+
+query = sys.argv[-1]
+
+if not query: exit()
+try:
+    answer = chat.send_message(query).text
+    print(answer)
+    cur.execute("""
+                INSERT INTO history(prompt, answer, model, role, time, tg_user) 
+                VALUES(?, ?, ?, ?, strftime('%Y-%m-%d %H:%M', 'now', 'localtime'), ?)
+                """, [query, answer, model, role, TG_USER_ID]) 
+
+except genai.errors.ClientError as e:
+    print(e)
+    for model in client.models.list():
+        if 'generateContent' in model.supported_actions:
+            print(model.name)
+con.commit()
+cur.close()
+con.close()
