@@ -1,9 +1,9 @@
-# 🏗️  Architecture
+# Architecture
 - The project is split into two distinct layers:
     - The Brain (aibot.py): A command-line utility that handles Gemini API communication, enforces personality instructions, and manages conversation state via a local SQLite database.
     - The Gateway (tg_aibot.py): A robust Telethon-based listener that acts as a secure bridge, routing messages from your Telegram client to the engine and relaying responses.
 
-# ✨ Key Features
+# Key Features
 - Persistent Memory: Conversations are stored in SQLite, allowing the AI to "remember" previous interactions across sessions.
 - Personality-Driven: Configured with a "Stoic/Sigma" persona, providing concise, expert-level social and strategic advice. Also you can change role for whatever you wish. Just hardcode it 
     ```python
