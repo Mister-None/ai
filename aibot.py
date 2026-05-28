@@ -7,12 +7,10 @@ load_dotenv(dotenv_path=os.getenv('DOTENV_FILE_PATH'))
 client = genai.Client(api_key=os.environ.get("ai_key_private"))
 TG_USER_ID = int(os.getenv('tg_user_id'))
 
-model = "gemini-3.1-flash-lite"
+model = "gemma-4-31b-it"
 role = "stoic-introvert(sigma-type), who prefer solitary life and freedom, but also you an expert of social interactions"
-#tools = [types.Tool(googleSearch=types.GoogleSearch())]
 
 config = types.GenerateContentConfig(
-       # tools=tools, 
         temperature=1, 
         system_instruction=role)
 
@@ -31,7 +29,9 @@ chat = client.chats.create(model=model, history=history, config=config)
 
 query = sys.argv[-1]
 
-if not query: exit()
+if not query: 
+    print('Please, provide a message!!!')
+    exit()
 try:
     answer = chat.send_message(query).text
     print(answer)
@@ -42,9 +42,7 @@ try:
 
 except genai.errors.ClientError as e:
     print(e)
-    for model in client.models.list():
-        if 'generateContent' in model.supported_actions:
-            print(model.name)
+
 con.commit()
 cur.close()
 con.close()
