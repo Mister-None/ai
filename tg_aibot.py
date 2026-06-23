@@ -19,7 +19,10 @@ async def start(event):
     prompt = re.sub(r"""["]""", "'", event.message.text)
     command = ["python", AI_PATH, prompt]
     answer = subprocess.run(command, capture_output=True, text=True).stdout.strip()
-    message = await client.send_message(int(TG_USER_ID), answer)
+    try:
+        message = await client.send_message(int(TG_USER_ID), answer)
+    except errors.rpcerrorlist.MessageTooLongError:
+        message = await client.send_message(int(TG_USER_ID), str(answer[:4094]))
 
 async def main():
     await client.start(bot_token=TG_BOT_TOKEN)
